@@ -33,7 +33,7 @@ namespace DocumentApp_ProizvodstvennayaPraktika.Pages
                 return;
             }
 
-            var user = Entities.GetContext().Users.AsNoTracking()
+            var user = new Entities().Users.AsNoTracking()
                         .FirstOrDefault(u => u.Username == TbUsername.Text);
 
             if (user == null)

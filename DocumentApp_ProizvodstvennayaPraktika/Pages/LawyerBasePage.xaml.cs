@@ -12,6 +12,7 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
+using DocumentApp_ProizvodstvennayaPraktika.Pages; // Или где у вас находится LawyerBasePage
 
 namespace DocumentApp_ProizvodstvennayaPraktika.Pages
 {
@@ -30,8 +31,20 @@ namespace DocumentApp_ProizvodstvennayaPraktika.Pages
         {
             using (var context = new Entities())
             {
-                ActiveContractsCount.Text = context.ClientContracts.Count(c => c.Status == "Active").ToString();
-                ClientsCount.Text = context.Users.Count(u => u.RoleId == 1).ToString(); 
+                // Активные договоры
+                ActiveContractsCount.Text = context.ClientContracts
+                    .Count(c => c.Status == "Active").ToString();
+
+                // Клиенты - используем ТОЧНО ТЕ ЖЕ условия, что и в ClientManagementWindow
+                ClientsCount.Text = context.Users
+                    .Where(u => u.RoleId == 1) // Только клиенты
+                    .Where(u => !string.IsNullOrEmpty(u.FullName) &&
+                           !string.IsNullOrEmpty(u.Email) &&
+                           u.CreatedAt != null) // Только валидные записи
+                    .Count()
+                    .ToString();
+
+                // Шаблоны
                 TemplatesCount.Text = context.ContractTemplates.Count().ToString();
             }
         }

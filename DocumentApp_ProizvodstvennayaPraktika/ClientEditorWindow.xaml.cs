@@ -20,6 +20,7 @@ namespace DocumentApp_ProizvodstvennayaPraktika
     public partial class ClientEditorWindow : Window
     {
         public Users Client { get; set; }
+        public string Password { get; set; }
 
         public ClientEditorWindow(Users client)
         {
@@ -38,6 +39,9 @@ namespace DocumentApp_ProizvodstvennayaPraktika
                     MessageBoxButton.OK, MessageBoxImage.Warning);
                 return;
             }
+
+            // Сохраняем пароль из PasswordBox
+            Password = PasswordBox.Password;
 
             this.DialogResult = true;
             this.Close();

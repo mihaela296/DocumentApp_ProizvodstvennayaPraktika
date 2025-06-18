@@ -1,32 +1,19 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Data.SqlClient;
+using System.Data.Entity;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
-using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Shapes;
-using System.Configuration;
-using Dapper;
 using Newtonsoft.Json;
 
 namespace DocumentApp_ProizvodstvennayaPraktika
 {
-    /// <summary>
-    /// Логика взаимодействия для ContractViewWindow.xaml
-    /// </summary>
     public partial class ContractViewWindow : Window
     {
         private ClientContracts _contract;
         private Users _currentUser;
-        private bool _isEditMode = false;
         private Dictionary<string, Control> _fieldControls = new Dictionary<string, Control>();
+        private bool _isEditMode = false;
 
         public ContractViewWindow(ClientContracts contract, Users user)
         {
@@ -36,55 +23,65 @@ namespace DocumentApp_ProizvodstvennayaPraktika
             DataContext = _contract;
 
             LoadContractFields();
+            UpdateUI();
         }
 
         private void LoadContractFields()
         {
-            FieldsContainer.Items.Clear();
-            _fieldControls.Clear();
-
             try
             {
-                using (var context = Entities.GetContext())
+                using (var context = new Entities())
                 {
-                    // Загрузка полей шаблона
-                    var fields = context.TemplateFields.Where(tf => tf.TemplateId == _contract.TemplateId).ToList();
+                    _contract = context.ClientContracts
+                        .Include(c => c.ContractTemplates)
+                        .Include(c => c.ContractTemplates.TemplateFields)
+                        .FirstOrDefault(c => c.ContractId == _contract.ContractId);
 
-                    // Загрузка данных договора (если есть)
+                    if (_contract == null || _contract.ContractTemplates == null)
+                    {
+                        MessageBox.Show("Договор или шаблон не найден");
+                        Close();
+                        return;
+                    }
+
+                    FieldsContainer.Items.Clear();
+                    _fieldControls.Clear();
+
                     var contractData = string.IsNullOrEmpty(_contract.ContractData)
                         ? new Dictionary<string, string>()
                         : JsonConvert.DeserializeObject<Dictionary<string, string>>(_contract.ContractData);
 
-                    foreach (var field in fields)
+                    foreach (var field in _contract.ContractTemplates.TemplateFields)
                     {
-                        // Создаем элементы управления для каждого поля
-                        var stackPanel = new StackPanel { Orientation = Orientation.Vertical, Margin = new Thickness(0, 5, 0, 5) };
-                        var label = new Label { Content = field.FieldLabel, Style = (Style)FindResource("LabelStyle") };
-                        stackPanel.Children.Add(label);
+                        var stackPanel = new StackPanel { Orientation = Orientation.Vertical };
+                        var label = new Label { Content = field.FieldLabel };
 
                         Control inputControl;
-                        switch (field.FieldType.ToLower())
+                        if (field.FieldType.ToLower() == "date")
                         {
-                            case "date":
-                                var datePicker = new DatePicker { Style = (Style)FindResource("TextBoxStyle") };
-                                if (contractData.ContainsKey(field.FieldName) && DateTime.TryParse(contractData[field.FieldName], out var date))
+                            var datePicker = new DatePicker();
+                            if (contractData.ContainsKey(field.FieldName))
+                            {
+                                DateTime date;
+                                if (DateTime.TryParse(contractData[field.FieldName], out date))
+                                {
                                     datePicker.SelectedDate = date;
-                                inputControl = datePicker;
-                                break;
-                            case "number":
-                                var numBox = new TextBox { Style = (Style)FindResource("TextBoxStyle") };
-                                if (contractData.ContainsKey(field.FieldName))
-                                    numBox.Text = contractData[field.FieldName];
-                                inputControl = numBox;
-                                break;
-                            default: // text и другие
-                                var textBox = new TextBox { Style = (Style)FindResource("TextBoxStyle") };
-                                if (contractData.ContainsKey(field.FieldName))
-                                    textBox.Text = contractData[field.FieldName];
-                                inputControl = textBox;
-                                break;
+                                }
+                            }
+                            inputControl = datePicker;
+                        }
+                        else
+                        {
+                            var textBox = new TextBox();
+                            if (contractData.ContainsKey(field.FieldName))
+                            {
+                                textBox.Text = contractData[field.FieldName];
+                            }
+                            inputControl = textBox;
                         }
 
+                        inputControl.IsEnabled = false;
+                        stackPanel.Children.Add(label);
                         stackPanel.Children.Add(inputControl);
                         FieldsContainer.Items.Add(stackPanel);
                         _fieldControls.Add(field.FieldName, inputControl);
@@ -93,107 +90,91 @@ namespace DocumentApp_ProizvodstvennayaPraktika
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Ошибка загрузки полей договора: {ex.Message}");
+                MessageBox.Show($"Ошибка загрузки полей: {ex.Message}");
             }
         }
 
         private void EditBtn_Click(object sender, RoutedEventArgs e)
         {
-            //if (_isEditMode)
-            //{
-            //    // Сохранение изменений
-            //    try
-            //    {
-            //        var contractData = new Dictionary<string, string>();
-            //        foreach (var field in _fieldControls)
-            //        {
-            //            string value = field.Value switch
-            //            {
-            //                TextBox textBox => textBox.Text,
-            //                DatePicker datePicker => datePicker.SelectedDate?.ToString("yyyy-MM-dd"),
-            //                _ => string.Empty
-            //            };
-            //            contractData.Add(field.Key, value);
-            //        }
+            _isEditMode = true;
+            foreach (var control in _fieldControls.Values)
+            {
+                control.IsEnabled = true;
+            }
 
-            //        _contract.ContractData = JsonConvert.SerializeObject(contractData);
-            //        _contract.UpdatedAt = DateTime.Now;
+            EditBtn.Visibility = Visibility.Collapsed;
+            SaveBtn.Visibility = Visibility.Visible;
+        }
 
-            //        using (SqlConnection connection = new SqlConnection(ConfigurationManager.ConnectionStrings["DefaultConnection"].ConnectionString))
-            //        {
-            //            string updateQuery = @"UPDATE ClientContracts 
-            //                             SET ContractData = @ContractData, 
-            //                                 UpdatedAt = @UpdatedAt,
-            //                                 Status = @Status
-            //                             WHERE ContractId = @ContractId";
+        private void SaveBtn_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                var contractData = new Dictionary<string, string>();
+                foreach (var field in _fieldControls)
+                {
+                    string value = "";
+                    if (field.Value is TextBox)
+                    {
+                        value = ((TextBox)field.Value).Text;
+                    }
+                    else if (field.Value is DatePicker)
+                    {
+                        var datePicker = (DatePicker)field.Value;
+                        value = datePicker.SelectedDate?.ToString("yyyy-MM-dd") ?? "";
+                    }
+                    contractData.Add(field.Key, value);
+                }
 
-            //            connection.Execute(updateQuery, new
-            //            {
-            //                _contract.ContractData,
-            //                _contract.UpdatedAt,
-            //                _contract.Status,
-            //                _contract.ContractId
-            //            });
-            //        }
+                using (var context = new Entities())
+                {
+                    var dbContract = context.ClientContracts.Find(_contract.ContractId);
+                    if (dbContract != null)
+                    {
+                        dbContract.ContractData = JsonConvert.SerializeObject(contractData);
+                        dbContract.UpdatedAt = DateTime.Now;
 
-            //        MessageBox.Show("Договор успешно сохранен", "Сохранение", MessageBoxButton.OK, MessageBoxImage.Information);
-            //    }
-            //    catch (Exception ex)
-            //    {
-            //        MessageBox.Show($"Ошибка сохранения договора: {ex.Message}", "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
-            //    }
+                        // Не меняем статус на Completed при повторном сохранении
+                        if (dbContract.Status == "Draft")
+                        {
+                            dbContract.Status = "Completed";
+                        }
 
-            //    EditBtn.Content = "Заполнить договор";
-            //    ContentBox.IsReadOnly = true;
-            //    _isEditMode = false;
-            //}
-            //else
-            //{
-            //    EditBtn.Content = "Сохранить";
-            //    ContentBox.IsReadOnly = false;
-            //    _isEditMode = true;
-            //}
+                        context.SaveChanges();
+                        _contract = dbContract;
+                        DataContext = _contract;
+                    }
+                }
+
+                _isEditMode = false;
+                foreach (var control in _fieldControls.Values)
+                {
+                    control.IsEnabled = false;
+                }
+
+                EditBtn.Visibility = Visibility.Visible;
+                SaveBtn.Visibility = Visibility.Collapsed;
+
+                MessageBox.Show("Изменения сохранены", "Сохранение",
+                    MessageBoxButton.OK, MessageBoxImage.Information);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Ошибка сохранения договора: {ex.Message}", "Ошибка",
+                    MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+        private void UpdateUI()
+        {
+            EditBtn.Visibility = Visibility.Visible;
+            SaveBtn.Visibility = Visibility.Collapsed;
         }
 
         private void ExportToWord_Click(object sender, RoutedEventArgs e)
         {
-            //try
-            //{
-            //    // Создаем документ Word
-            //    using (var doc = DocX.Create($"{_contract.Template.TemplateName}_{_contract.ContractId}.docx"))
-            //    {
-            //        // Добавляем заголовок
-            //        var title = doc.InsertParagraph(_contract.Template.TemplateName);
-            //        title.FontSize(16).Bold().Alignment = AlignmentX.Center;
-
-            //        // Добавляем информацию о договоре
-            //        doc.InsertParagraph($"Номер: {_contract.ContractNumber}").Alignment = AlignmentX.Left;
-            //        doc.InsertParagraph($"Дата: {_contract.ContractDate:dd.MM.yyyy}").Alignment = AlignmentX.Left;
-            //        doc.InsertParagraph($"Статус: {_contract.Status}").Alignment = AlignmentX.Left;
-            //        doc.InsertParagraph("").Alignment = AlignmentX.Left;
-
-            //        // Добавляем заполненные данные
-            //        if (!string.IsNullOrEmpty(_contract.ContractData))
-            //        {
-            //            var data = JsonConvert.DeserializeObject<Dictionary<string, string>>(_contract.ContractData);
-            //            foreach (var item in data)
-            //            {
-            //                doc.InsertParagraph($"{item.Key}: {item.Value}").Alignment = AlignmentX.Left;
-            //            }
-            //            doc.InsertParagraph("").Alignment = AlignmentX.Left;
-            //        }
-
-            //        // Добавляем основной текст договора
-            //        doc.InsertParagraph(_contract.Template.Content).Alignment = AlignmentX.Left;
-
-            //        doc.Save();
-            //        MessageBox.Show("Договор успешно экспортирован в Word", "Экспорт", MessageBoxButton.OK, MessageBoxImage.Information);
-            //    }
-            //}
-            //catch (Exception ex)
-            //{
-            //    MessageBox.Show($"Ошибка экспорта в Word: {ex.Message}", "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
-            //}
+            MessageBox.Show("Экспорт в Word будет реализован в будущей версии", "Информация",
+                MessageBoxButton.OK, MessageBoxImage.Information);
         }
 
         private void SendButton_Click(object sender, RoutedEventArgs e)
@@ -204,7 +185,17 @@ namespace DocumentApp_ProizvodstvennayaPraktika
 
         private void CloseButton_Click(object sender, RoutedEventArgs e)
         {
-            this.Close();
+            if (_isEditMode)
+            {
+                var result = MessageBox.Show("У вас есть несохраненные изменения. Закрыть без сохранения?",
+                    "Подтверждение", MessageBoxButton.YesNo, MessageBoxImage.Question);
+
+                if (result == MessageBoxResult.No)
+                {
+                    return;
+                }
+            }
+            Close();
         }
     }
 }

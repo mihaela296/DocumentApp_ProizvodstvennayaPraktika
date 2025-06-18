@@ -52,6 +52,7 @@
                             <TextBlock x:Name="ActiveContractsCount" Text="0" Foreground="White" 
                                        FontSize="24" FontWeight="Bold" HorizontalAlignment="Center"/>
                         </StackPanel>
+                        
                     </Border>
 
                     <Border Background="#27AE60" CornerRadius="5" Padding="20" Margin="10">

@@ -12,6 +12,7 @@ namespace DocumentApp_ProizvodstvennayaPraktika
         private int _clientId;
         private string _clientName;
 
+
         public string ClientName => $"Договоры клиента: {_clientName}";
 
         public ClientContractsWindow(int clientId)
@@ -24,15 +25,22 @@ namespace DocumentApp_ProizvodstvennayaPraktika
 
         private void LoadClientData()
         {
-            using (var context = new Entities())
+            try
             {
-                var client = context.Users.Find(_clientId);
-                _clientName = client?.FullName ?? "Неизвестный клиент";
-
-                ContractsGrid.ItemsSource = context.ClientContracts
-                    .Include(c => c.ContractTemplates) // Исправлено: лямбда-выражение вместо строки
-                    .Where(c => c.ClientId == _clientId)
-                    .ToList();
+                using (var context = new Entities())
+                {
+                    ContractsGrid.ItemsSource = context.ClientContracts
+                        .Include(c => c.ContractTemplates)
+                        .Where(c => c.ClientId == _clientId)
+                        .Where(c => c.ContractTemplates != null) // Исключаем договоры без шаблона
+                        .Where(c => !string.IsNullOrEmpty(c.ContractTemplates.TemplateName)) // Исключаем пустые названия
+                        .OrderBy(c => c.ContractId) // Сортируем по ID
+                        .ToList();
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Ошибка загрузки договоров: {ex.Message}");
             }
         }
 

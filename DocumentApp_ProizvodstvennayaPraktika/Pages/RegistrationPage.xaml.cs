@@ -27,7 +27,7 @@ namespace DocumentApp_ProizvodstvennayaPraktika.Pages
         public RegistrationPage()
         {
             InitializeComponent();
-            CmbRoles.ItemsSource = Entities.GetContext().Roles.ToList();
+            CmbRoles.ItemsSource = new Entities().Roles.ToList();
         }
 
         private Users _user = new Users();
@@ -98,7 +98,7 @@ namespace DocumentApp_ProizvodstvennayaPraktika.Pages
 
             try
             {
-                var context = Entities.GetContext();
+                var context = new Entities();
 
                 _user.Username = TbUsername.Text;
                 _user.FullName = TbFullname.Text;

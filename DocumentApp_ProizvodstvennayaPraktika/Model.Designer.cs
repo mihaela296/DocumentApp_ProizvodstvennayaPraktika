@@ -1,4 +1,4 @@
-﻿// Создание кода T4 для модели "C:\Users\karta\source\repos\DocumentApp_ProizvodstvennayaPraktika\DocumentApp_ProizvodstvennayaPraktika\Model.edmx" включено. 
+﻿// Создание кода T4 для модели "C:\Users\SASA\Downloads\DocumentApp_ProizvodstvennayaPraktika-master (2)\DocumentApp_ProizvodstvennayaPraktika-master\DocumentApp_ProizvodstvennayaPraktika\Model.edmx" включено. 
 // Чтобы включить формирование кода прежних версий, измените значение свойства "Стратегия создания кода" конструктора
 // на "Legacy ObjectContext". Это свойство доступно в окне "Свойства", если модель
 // открыта в конструкторе.

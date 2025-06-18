@@ -22,8 +22,9 @@
         <!-- Список договоров -->
         <Border Grid.Row="1" Background="White" CornerRadius="5" Margin="0 10 0 0"
                 BorderBrush="#BDC3C7" BorderThickness="1" Padding="10">
-            <DataGrid x:Name="ContractsGrid" AutoGenerateColumns="False" 
-                      SelectionMode="Single" HeadersVisibility="Column">
+            <DataGrid x:Name="ContractsGrid" AutoGenerateColumns="False"
+          ItemsSource="{Binding}"
+          CanUserAddRows="False">
                 <DataGrid.Columns>
                     <DataGridTextColumn Header="ID" Binding="{Binding ContractId}" Width="Auto"/>
                     <DataGridTextColumn Header="Название" Binding="{Binding ContractTemplates.TemplateName}" Width="*"/>

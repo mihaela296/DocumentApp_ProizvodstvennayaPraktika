@@ -19,7 +19,7 @@
                 BorderBrush="#BDC3C7" BorderThickness="1">
             <StackPanel Orientation="Horizontal">
                 <TextBox x:Name="SearchBox" Width="300" Style="{StaticResource TextBoxStyle}" 
-                         Margin="5" Tag="Поиск по ФИО или email..."/>
+         Margin="5" Tag="Поиск по ФИО или email..." TextChanged="SearchBox_TextChanged"/>
                 <Button Content="Найти" Style="{StaticResource ButtonStyle}" Margin="5"/>
                 <Button Content="Добавить клиента" Style="{StaticResource ButtonStyle}" Margin="5"
                         Click="AddClient_Click"/>
@@ -29,8 +29,10 @@
         <!-- Список клиентов -->
         <Border Grid.Row="1" Background="White" CornerRadius="5" Margin="0 10 0 0"
                 BorderBrush="#BDC3C7" BorderThickness="1" Padding="10">
-            <DataGrid x:Name="ClientsGrid" AutoGenerateColumns="False" SelectionMode="Single"
-                      HeadersVisibility="Column" BorderThickness="0">
+            <DataGrid x:Name="ClientsGrid" AutoGenerateColumns="False"
+          CanUserAddRows="False" 
+                SelectionMode="Single"
+          HeadersVisibility="Column">
                 <DataGrid.Columns>
                     <DataGridTextColumn Header="ID" Binding="{Binding UserId}" Width="Auto"/>
                     <DataGridTextColumn Header="ФИО" Binding="{Binding FullName}" Width="*"/>
@@ -45,6 +47,8 @@
                                             Margin="2" Padding="5" Click="ViewContracts_Click"/>
                                     <Button Content="Редактировать" Style="{StaticResource ButtonStyle}" 
                                             Margin="2" Padding="5" Click="EditClient_Click"/>
+                                    <Button Content="Удалить" Margin="2" 
+                                Click="DeleteClient_Click" Background="#FFE74C3C" Foreground="White"/>
                                 </StackPanel>
                             </DataTemplate>
                         </DataGridTemplateColumn.CellTemplate>
@@ -55,7 +59,9 @@
 
         <!-- Панель кнопок -->
         <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0 10 0 0">
+            <Button Content="Назад" Style="{StaticResource ButtonStyle}" Margin="5" Click="BackButton_Click"/>
             <Button Content="Закрыть" Style="{StaticResource ButtonStyle}" Margin="5" Click="Close_Click"/>
         </StackPanel>
+
     </Grid>
 </Window>
