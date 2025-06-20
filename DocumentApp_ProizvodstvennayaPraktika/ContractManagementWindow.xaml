@@ -51,8 +51,8 @@
           SelectionMode="Single" 
           HeadersVisibility="Column"
           CanUserAddRows="False"
-                CanUserDeleteRows="False"
-                Background="White">
+          CanUserDeleteRows="False"
+          Background="White">
                 <DataGrid.Columns>
                     <DataGridTextColumn Header="ID" Binding="{Binding ContractId}" Width="Auto"/>
                     <DataGridTextColumn Header="Название" Binding="{Binding ContractTemplates.TemplateName}" Width="*"/>
@@ -80,7 +80,21 @@
                         <DataGridTemplateColumn.CellTemplate>
                             <DataTemplate>
                                 <Button Content="Просмотр" Style="{StaticResource ButtonStyle}" 
-                                        Margin="2" Padding="5" Click="ViewContract_Click"/>
+                            Margin="2" Padding="5" Click="ViewContract_Click"/>
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                    </DataGridTemplateColumn>
+                    <!-- Новая колонка для кнопки удаления -->
+                    <DataGridTemplateColumn Width="Auto">
+                        <DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate>
+                                <Button Content="Удалить" 
+                            Style="{StaticResource ButtonStyle}" 
+                            Background="#FFE74C3C"
+                            Foreground="White"
+                            Margin="2" 
+                            Padding="5" 
+                            Click="DeleteContract_Click"/>
                             </DataTemplate>
                         </DataGridTemplateColumn.CellTemplate>
                     </DataGridTemplateColumn>

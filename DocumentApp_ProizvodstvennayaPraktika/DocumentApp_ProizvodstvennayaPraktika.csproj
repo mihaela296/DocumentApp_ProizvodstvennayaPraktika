@@ -121,8 +121,14 @@
     <Compile Include="Roles.cs">
       <DependentUpon>Model.tt</DependentUpon>
     </Compile>
+    <Compile Include="TemplateEditorWindow.xaml.cs">
+      <DependentUpon>TemplateEditorWindow.xaml</DependentUpon>
+    </Compile>
     <Compile Include="TemplateFields.cs">
       <DependentUpon>Model.tt</DependentUpon>
+    </Compile>
+    <Compile Include="TemplateFieldsWindow.xaml.cs">
+      <DependentUpon>TemplateFieldsWindow.xaml</DependentUpon>
     </Compile>
     <Compile Include="TemplateManagementWindow.xaml.cs">
       <DependentUpon>TemplateManagementWindow.xaml</DependentUpon>
@@ -183,6 +189,14 @@
       <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="StyleDictionary.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="TemplateEditorWindow.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="TemplateFieldsWindow.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>

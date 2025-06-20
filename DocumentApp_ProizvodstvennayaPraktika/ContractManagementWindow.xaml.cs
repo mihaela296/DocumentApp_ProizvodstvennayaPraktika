@@ -215,6 +215,62 @@ namespace DocumentApp_ProizvodstvennayaPraktika
             }
         }
 
+        private void DeleteContract_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                // Получаем выбранный договор
+                var button = sender as Button;
+                var contract = button?.DataContext as ClientContracts;
+
+                if (contract == null)
+                {
+                    MessageBox.Show("Не удалось получить информацию о договоре", "Ошибка",
+                        MessageBoxButton.OK, MessageBoxImage.Error);
+                    return;
+                }
+
+                // Подтверждение удаления
+                var result = MessageBox.Show($"Вы уверены, что хотите удалить договор '{contract.ContractTemplates?.TemplateName}'?",
+                    "Подтверждение удаления", MessageBoxButton.YesNo, MessageBoxImage.Warning);
+
+                if (result == MessageBoxResult.Yes)
+                {
+                    using (var context = new Entities())
+                    {
+                        // Получаем полную версию договора из базы
+                        var contractToDelete = context.ClientContracts
+                            .Include(c => c.ContractHistory)
+                            .FirstOrDefault(c => c.ContractId == contract.ContractId);
+
+                        if (contractToDelete != null)
+                        {
+                            // Удаляем связанную историю
+                            if (contractToDelete.ContractHistory != null)
+                            {
+                                context.ContractHistory.RemoveRange(contractToDelete.ContractHistory);
+                            }
+
+                            // Удаляем сам договор
+                            context.ClientContracts.Remove(contractToDelete);
+                            context.SaveChanges();
+
+                            // Обновляем список
+                            LoadContracts();
+
+                            MessageBox.Show("Договор успешно удален", "Успех",
+                                MessageBoxButton.OK, MessageBoxImage.Information);
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Ошибка при удалении договора: {ex.Message}", "Ошибка",
+                    MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
         private void Close_Click(object sender, RoutedEventArgs e)
         {
             this.Close();
