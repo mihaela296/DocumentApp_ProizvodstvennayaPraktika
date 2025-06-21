@@ -1,10 +1,14 @@
-﻿using System;
+﻿using Newtonsoft.Json;
+using System;
 using System.Collections.Generic;
 using System.Data.Entity;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Controls;
-using Newtonsoft.Json;
+using Word = Microsoft.Office.Interop.Word;
+using System.Runtime.InteropServices; // Для Marshal.ReleaseComObject
+using Newtonsoft.Json; // Для работы с JSON-данными договора
 
 namespace DocumentApp_ProizvodstvennayaPraktika
 {
@@ -173,8 +177,83 @@ namespace DocumentApp_ProizvodstvennayaPraktika
 
         private void ExportToWord_Click(object sender, RoutedEventArgs e)
         {
-            MessageBox.Show("Экспорт в Word будет реализован в будущей версии", "Информация",
-                MessageBoxButton.OK, MessageBoxImage.Information);
+            try
+            {
+                // Диалог сохранения файла
+                var saveFileDialog = new Microsoft.Win32.SaveFileDialog
+                {
+                    Filter = "Word Documents (*.docx)|*.docx",
+                    FileName = $"Договор_{_contract.ContractNumber}_{DateTime.Now:yyyyMMdd}.docx",
+                    DefaultExt = ".docx",
+                    Title = "Сохранить договор"
+                };
+
+                if (saveFileDialog.ShowDialog() == true)
+                {
+                    string filePath = saveFileDialog.FileName;
+
+                    // Создаем объект Word
+                    Word.Application wordApp = new Word.Application();
+                    try
+                    {
+                        Word.Document document = wordApp.Documents.Add();
+                        try
+                        {
+                            // Заголовок
+                            Word.Paragraph title = document.Paragraphs.Add();
+                            title.Range.Text = _contract.ContractTemplates.TemplateName;
+                            title.Range.Font.Bold = 1;
+                            title.Range.Font.Size = 16;
+                            title.Format.Alignment = Word.WdParagraphAlignment.wdAlignParagraphCenter;
+                            title.Range.InsertParagraphAfter();
+
+                            // Информация о договоре
+                            Word.Paragraph info = document.Paragraphs.Add();
+                            info.Range.Text = $"Номер: {_contract.ContractNumber}\nДата: {_contract.ContractDate:dd.MM.yyyy}\nСтатус: {_contract.Status}";
+                            info.Format.SpaceAfter = 10;
+                            info.Range.InsertParagraphAfter();
+
+                            // Поля договора (если есть)
+                            if (!string.IsNullOrEmpty(_contract.ContractData))
+                            {
+                                var fields = JsonConvert.DeserializeObject<Dictionary<string, string>>(_contract.ContractData);
+                                foreach (var field in _contract.ContractTemplates.TemplateFields)
+                                {
+                                    if (fields.ContainsKey(field.FieldName))
+                                    {
+                                        Word.Paragraph fieldParagraph = document.Paragraphs.Add();
+                                        fieldParagraph.Range.Text = $"{field.FieldLabel}: {fields[field.FieldName]}";
+                                        fieldParagraph.Range.InsertParagraphAfter();
+                                    }
+                                }
+                            }
+
+                            // Основной текст
+                            Word.Paragraph content = document.Paragraphs.Add();
+                            content.Range.Text = _contract.ContractTemplates.Content;
+                            content.Format.SpaceBefore = 10;
+
+                            // Сохраняем
+                            document.SaveAs2(filePath, Word.WdSaveFormat.wdFormatDocumentDefault);
+                            MessageBox.Show($"Договор сохранён:\n{filePath}", "Готово", MessageBoxButton.OK, MessageBoxImage.Information);
+                        }
+                        finally
+                        {
+                            document.Close(false);
+                            Marshal.ReleaseComObject(document);
+                        }
+                    }
+                    finally
+                    {
+                        wordApp.Quit();
+                        Marshal.ReleaseComObject(wordApp);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Ошибка экспорта: {ex.Message}", "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
         }
 
         private void SendButton_Click(object sender, RoutedEventArgs e)
